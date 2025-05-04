@@ -11,10 +11,26 @@ import SwiftUI
 final class SignInEmailViewModel: ObservableObject {
     @Published var email = ""
     @Published var password = ""
-    @Published var isAuthenticated = false
     @Published var errorMessage: String?
     
-    func SignIn() {
+    func signIn() {
+        guard !email.isEmpty, !password.isEmpty else {
+            errorMessage = "Email or Password is not valid!"
+            return
+        }
+        
+        Task {
+            do {
+                let returnedUserData = try await AuthenticationManager.shared.signIn(email: email, password: password)
+                print("Successfully signed in user: \(returnedUserData.uid)")
+                errorMessage = nil
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+    
+    func createAccount() {
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Email or Password is not valid!"
             return
@@ -23,7 +39,7 @@ final class SignInEmailViewModel: ObservableObject {
         Task {
             do {
                 let returnedUserData = try await AuthenticationManager.shared.createUser(email: email, password: password)
-                isAuthenticated = true
+                print("Successfully created user: \(returnedUserData.uid)")
                 errorMessage = nil
             } catch {
                 errorMessage = error.localizedDescription
@@ -37,7 +53,7 @@ struct SignInEmailView: View {
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        VStack {
+        VStack(spacing: 15) {
             TextField("Email...", text: $viewModel.email)
                 .padding()
                 .background(Color.gray.opacity(0.4))
@@ -58,8 +74,8 @@ struct SignInEmailView: View {
             }
             
             Button {
-                viewModel.SignIn()
-            } label : {
+                viewModel.signIn()
+            } label: {
                 Text("Sign In")
                     .font(.headline)
                     .foregroundStyle(.white)
@@ -69,16 +85,22 @@ struct SignInEmailView: View {
                     .cornerRadius(20)
             }
             
+            Button {
+                viewModel.createAccount()
+            } label: {
+                Text("Create Account")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(height: 55)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.green)
+                    .cornerRadius(20)
+            }
+            
             Spacer()
         }
         .padding()
         .navigationTitle("Sign in with Email")
-        .onChange(of: viewModel.isAuthenticated) { isAuthenticated in
-            if isAuthenticated {
-                NotificationCenter.default.post(name: NSNotification.Name("UserDidAuthenticate"), object: nil)
-                presentationMode.wrappedValue.dismiss()
-            }
-        }
     }
 }
 

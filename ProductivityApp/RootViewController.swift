@@ -7,16 +7,35 @@
 
 import SwiftUI
 import UIKit
+import Combine
 
 class RootViewController: UIViewController {
+    
+    private var cancellables = Set<AnyCancellable>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        setupAuthenticationFlow()
+        
+        AuthenticationManager.shared.$authState.sink { [weak self] state in
+            switch state {
+            case .loggedIn:
+                self?.showMainFlow()
+            case .loggedOut:
+                self?.showAuthenticationFlow()
+            }
+        }
+        .store(in: &cancellables)
     }
     
-    private func setupAuthenticationFlow() {
+    private func showAuthenticationFlow() {
+        // Remove any existing child view controllers
+        children.forEach {
+            $0.willMove(toParent: nil)
+            $0.view.removeFromSuperview()
+            $0.removeFromParent()
+        }
+        
         // Create the SwiftUI authentication view
         let authenticationView = AuthenticationView()
         
@@ -30,6 +49,34 @@ class RootViewController: UIViewController {
         view.addSubview(hostingController.view)
         
         // Configure constraints
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        
+        hostingController.didMove(toParent: self)
+    }
+    
+    private func showMainFlow() {
+        // Remove any existing child view controllers
+        children.forEach {
+            $0.willMove(toParent: nil)
+            $0.view.removeFromSuperview()
+            $0.removeFromParent()
+        }
+        
+        // Create the SwiftUI settings view
+        // There are we could change the main view
+        // after login
+        let settingsView = SettingsView()
+        let hostingController = UIHostingController(rootView: settingsView)
+        
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
