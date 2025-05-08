@@ -72,11 +72,15 @@ class RootViewController: UIViewController {
         // There are we could change the main view
         // after login
         let settingsView = SettingsView()
+        
+        // Embed it in a UIHostingController
         let hostingController = UIHostingController(rootView: settingsView)
         
+        // Add as child view controller
         addChild(hostingController)
         view.addSubview(hostingController.view)
         
+        // Configure constraints
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
