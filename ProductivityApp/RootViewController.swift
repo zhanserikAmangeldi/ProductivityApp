@@ -68,27 +68,21 @@ class RootViewController: UIViewController {
             $0.removeFromParent()
         }
         
-        // Create the SwiftUI settings view
-        // There are we could change the main view
-        // after login
-        let settingsView = SettingsView()
-        
-        // Embed it in a UIHostingController
-        let hostingController = UIHostingController(rootView: settingsView)
+        let mainTabBarController = MainTabBarController()
         
         // Add as child view controller
-        addChild(hostingController)
-        view.addSubview(hostingController.view)
+        addChild(mainTabBarController)
+        view.addSubview(mainTabBarController.view)
         
         // Configure constraints
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        mainTabBarController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            mainTabBarController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            mainTabBarController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            mainTabBarController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            mainTabBarController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
-        hostingController.didMove(toParent: self)
+        mainTabBarController.didMove(toParent: self)
     }
 }
