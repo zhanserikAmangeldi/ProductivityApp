@@ -74,7 +74,7 @@ class CoreDataManager {
         saveContext()
     }
     
-    func fetchTasks(isCompleted: Bool? = nil, searchText: String? = nil, priorityFilter: TaskPriority? = nil) -> [TodoTask] {
+    func fetchTasks(isCompleted: Bool? = nil, searchText: String? = nil, priorityFilter: TaskPriority? = nil, tagFilter: String? = nil) -> [TodoTask] {
         let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         
@@ -95,6 +95,12 @@ class CoreDataManager {
         if let priorityFilter = priorityFilter {
             predicates.append(NSPredicate(format: "priority == %@", NSNumber(value: priorityFilter.rawValue)))
         }
+        
+        // Filter by tag if specified
+        if let tagFilter = tagFilter, !tagFilter.isEmpty {
+            predicates.append(NSPredicate(format: "tags CONTAINS[cd] %@", tagFilter))
+        }
+        
         
         // Combine predicates if needed
         if !predicates.isEmpty {
