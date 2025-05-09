@@ -64,6 +64,17 @@ struct SettingsView: View {
                         }
                 }
                 
+                Section(header: Text("Pomodoro Settings")) {
+                    NavigationLink(destination: PomodoroSettingsView()) {
+                        HStack {
+                            Image(systemName: "timer")
+                                .foregroundColor(.red)
+                                .frame(width: 30)
+                            Text("Pomodoro Timer Settings")
+                        }
+                    }
+                }
+                
                 Section(header: Text("Information")) {
                     Button(action: {
                         showingHowItWorks = true
