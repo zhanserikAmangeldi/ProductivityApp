@@ -18,7 +18,7 @@ class MainTabBarController: UITabBarController {
         
         let pomodoroVC = UIHostingController(rootView: PomodoroTimerView())
         let todoVC = UIHostingController(rootView: TodoListView())
-        let hobbyVC = UIHostingController(rootView: Text("Hobby list coming soon"))
+        let hobbyVC = UIHostingController(rootView: HobbyListView())
         let settingsVC = UIHostingController(rootView: SettingsView())
         
         pomodoroVC.tabBarItem = UITabBarItem(
