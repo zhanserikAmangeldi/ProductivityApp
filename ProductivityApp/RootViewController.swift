@@ -72,6 +72,7 @@ class RootViewController: UIViewController {
         
         // Add as child view controller
         addChild(mainTabBarController)
+        mainTabBarController.view.frame = view.bounds
         view.addSubview(mainTabBarController.view)
         
         // Configure constraints

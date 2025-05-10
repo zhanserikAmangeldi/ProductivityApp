@@ -7,12 +7,33 @@
 
 import UIKit
 import FirebaseCore
+import CoreData
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         FirebaseApp.configure()
+        
+        requestNotificationPermissions()
+
+        _ = CoreDataManager.shared.persistentContainer
+
+        print("Application did finish launching")
+        
         return true
+    }
+    
+    private func requestNotificationPermissions() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                print("Notification permission error: \(error.localizedDescription)")
+            } else if granted {
+                print("Notification permission granted")
+            } else {
+                print("Notification permission denied")
+            }
+        }
     }
 
     // MARK: UISceneSession Lifecycle
