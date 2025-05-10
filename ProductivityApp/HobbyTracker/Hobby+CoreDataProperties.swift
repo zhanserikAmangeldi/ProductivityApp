@@ -20,7 +20,6 @@ extension Hobby {
     @NSManaged public var hobbyDescription: String?
     @NSManaged public var iconName: String?
     @NSManaged public var colorHex: String?
-    @NSManaged public var frequencyType: String?
     @NSManaged public var dateCreated: Date?
     @NSManaged public var lastModified: Date?
     @NSManaged public var entries: NSSet?
@@ -37,15 +36,6 @@ extension Hobby {
     
     public var unwrappedIconName: String {
         iconName ?? "star"
-    }
-    
-    public var frequencyEnum: FrequencyType {
-        get {
-            return FrequencyType(rawValue: frequencyType ?? FrequencyType.daily.rawValue) ?? .daily
-        }
-        set {
-            frequencyType = newValue.rawValue
-        }
     }
     
     public var color: Color {
@@ -71,14 +61,7 @@ extension Hobby {
         return set.first { entry in
             guard let entryDate = entry.date else { return false }
             
-            switch frequencyEnum {
-            case .daily:
-                return calendar.isDate(entryDate, inSameDayAs: date)
-            case .weekly:
-                return calendar.isDate(entryDate, equalTo: date, toGranularity: .weekOfYear)
-            case .monthly:
-                return calendar.isDate(entryDate, equalTo: date, toGranularity: .month)
-            }
+            return calendar.isDate(entryDate, inSameDayAs: date)
         }
     }
     
@@ -107,39 +90,6 @@ extension Hobby {
 
 extension Hobby : Identifiable {
     
-}
-
-// Frequency type enum for type safety
-public enum FrequencyType: String, CaseIterable, Identifiable {
-    case daily = "daily"
-    case weekly = "weekly"
-    case monthly = "monthly"
-    
-    public var id: String { self.rawValue }
-    
-    public var displayName: String {
-        switch self {
-        case .daily: return "Daily"
-        case .weekly: return "Weekly"
-        case .monthly: return "Monthly"
-        }
-    }
-    
-    public var calendarComponent: Calendar.Component {
-        switch self {
-        case .daily: return .day
-        case .weekly: return .weekOfYear
-        case .monthly: return .month
-        }
-    }
-    
-    public var daysToDisplay: Int {
-        switch self {
-        case .daily: return 90 // Show about 3 months of daily data
-        case .weekly: return 52 // Show 1 year of weekly data
-        case .monthly: return 24 // Show 2 years of monthly data
-        }
-    }
 }
 
 // Extension to support Color hex conversion

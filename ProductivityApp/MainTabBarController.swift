@@ -18,7 +18,7 @@ class MainTabBarController: UITabBarController {
         
         let pomodoroVC = UIHostingController(rootView: Text("Pomdoro timer coming soon"))
         let todoVC = UIHostingController(rootView: Text("Todo list coming soon"))
-        let hobbyVC = UIHostingController(rootView: Text("Hobby list coming soon"))
+        let hobbyVC = UIHostingController(rootView: HobbyListView())
         let settingsVC = UIHostingController(rootView: SettingsView())
         
         pomodoroVC.tabBarItem = UITabBarItem(
@@ -46,5 +46,17 @@ class MainTabBarController: UITabBarController {
         )
         
         self.viewControllers = [pomodoroVC, todoVC, hobbyVC, settingsVC]
+    }
+    
+    private func createHostingController<Content: View>(for rootView: Content) -> UIHostingController<Content> {
+        let hostingController = UIHostingController(rootView: rootView)
+        
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        hostingController.view.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        hostingController.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        hostingController.view.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        hostingController.view.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+        
+        return hostingController
     }
 }
