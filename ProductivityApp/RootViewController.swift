@@ -37,7 +37,7 @@ class RootViewController: UIViewController {
         }
         
         // Create the SwiftUI authentication view
-        let authenticationView = AuthenticationView()
+        let authenticationView = SignInEmailView()
         
         // Embed it in a UIHostingController
         let hostingController = UIHostingController(rootView: NavigationStack {

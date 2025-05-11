@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// AuthenticationView for while will be depreceated.
 struct AuthenticationView: View {
     var body: some View {
         VStack{
