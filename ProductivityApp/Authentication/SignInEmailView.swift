@@ -83,7 +83,7 @@ struct SignInEmailView: View {
             }
             
             if viewModel.isLoading {
-                LoadingDotsView()
+                LoadingView(message: "Loading...")
                     .padding(.vertical, 10)
             }
             

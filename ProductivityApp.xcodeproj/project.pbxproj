@@ -10,6 +10,7 @@
 		5E9A6EF02DC6D02100101003 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 5E9A6EEF2DC6D02100101003 /* FirebaseAnalytics */; };
 		5E9A6EF22DC6D02100101003 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5E9A6EF12DC6D02100101003 /* FirebaseAuth */; };
 		5E9A6EF42DC6D02100101003 /* FirebaseAuthCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 5E9A6EF32DC6D02100101003 /* FirebaseAuthCombine-Community */; };
+		5EFFA0F12DD11FB6003FAFF2 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 5EFFA0F02DD11FB6003FAFF2 /* Lottie */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 				5E9A6EF02DC6D02100101003 /* FirebaseAnalytics in Frameworks */,
 				5E9A6EF42DC6D02100101003 /* FirebaseAuthCombine-Community in Frameworks */,
 				5E9A6EF22DC6D02100101003 /* FirebaseAuth in Frameworks */,
+				5EFFA0F12DD11FB6003FAFF2 /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +92,7 @@
 				5E9A6EEF2DC6D02100101003 /* FirebaseAnalytics */,
 				5E9A6EF12DC6D02100101003 /* FirebaseAuth */,
 				5E9A6EF32DC6D02100101003 /* FirebaseAuthCombine-Community */,
+				5EFFA0F02DD11FB6003FAFF2 /* Lottie */,
 			);
 			productName = ProductivityApp;
 			productReference = 5E9A6ED22DC6CE7900101003 /* ProductivityApp.app */;
@@ -121,6 +124,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				5E9A6EEE2DC6D02100101003 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				5EFFA0EF2DD11FB6003FAFF2 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5E9A6ED32DC6CE7900101003 /* Products */;
@@ -167,6 +171,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -194,6 +199,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -360,6 +366,14 @@
 				minimumVersion = 11.12.0;
 			};
 		};
+		5EFFA0EF2DD11FB6003FAFF2 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -377,6 +391,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5E9A6EEE2DC6D02100101003 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseAuthCombine-Community";
+		};
+		5EFFA0F02DD11FB6003FAFF2 /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5EFFA0EF2DD11FB6003FAFF2 /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

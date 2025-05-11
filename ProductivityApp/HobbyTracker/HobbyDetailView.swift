@@ -64,7 +64,7 @@ struct HobbyDetailView: View {
                 }
                 .overlay {
                     if viewModel.isSaving {
-                        LoadingDotsView()
+                        LoadingView(message: "Loading...")
                             .scaleEffect(1.5)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background(Color.black.opacity(0.2))

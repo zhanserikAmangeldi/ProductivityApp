@@ -44,7 +44,7 @@ struct QuoteSettingsView: View {
                         .disabled(viewModel.isLoading)
                         
                         if viewModel.isLoading {
-                            LoadingDotsView()
+                            LoadingView(message: "Loading...")
                         }
                         
                         if let errorMessage = viewModel.errorMessage {
