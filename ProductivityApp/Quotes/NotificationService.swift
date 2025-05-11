@@ -73,7 +73,7 @@ class NotificationService {
             let quote = try await QuotesService.shared.getRandomQuote()
             
             let content = UNMutableNotificationContent()
-            content.title = "Test Motivation"
+            content.title = "Motivation Boost(Test)"
             content.body = "\"\(quote.content)\" - \(quote.author)"
             content.sound = .default
             

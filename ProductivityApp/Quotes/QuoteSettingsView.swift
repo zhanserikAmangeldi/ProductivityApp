@@ -7,61 +7,6 @@
 
 import SwiftUI
 
-class QuoteSettingsViewModel: ObservableObject {
-    @Published var isQuoteNotificationsEnabled: Bool
-    @Published var notificationFrequency: Int
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    @Published var areGeneralNotificationsEnabled: Bool
-    
-    private let notificationService = NotificationService.shared
-    
-    init() {
-        self.areGeneralNotificationsEnabled = UserDefaults.standard.bool(forKey: "isNotificationsEnabled")
-        self.isQuoteNotificationsEnabled = UserDefaults.standard.bool(forKey: "isQuoteNotificationsEnabled")
-        self.notificationFrequency = UserDefaults.standard.integer(forKey: "quoteNotificationFrequency")
-        if self.notificationFrequency == 0 { self.notificationFrequency = 2 } // Default to 2 hours
-    }
-    
-    func saveSettings() {
-        let effectiveQuoteNotificationsEnabled = areGeneralNotificationsEnabled && isQuoteNotificationsEnabled
-        
-        UserDefaults.standard.set(effectiveQuoteNotificationsEnabled, forKey: "isQuoteNotificationsEnabled")
-        UserDefaults.standard.set(notificationFrequency, forKey: "quoteNotificationFrequency")
-        
-        Task {
-            await updateNotifications()
-        }
-    }
-    
-    func updateNotifications() async {
-        if isQuoteNotificationsEnabled {
-            await notificationService.scheduleQuoteNotifications()
-        } else {
-            notificationService.cancelQuoteNotifications()
-        }
-    }
-    
-    func testNotification() {
-        isLoading = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                await notificationService.scheduleTestQuoteNotification()
-                await MainActor.run {
-                    self.isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.isLoading = false
-                    self.errorMessage = "Failed to send test notification: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
-}
-
 struct QuoteSettingsView: View {
     @StateObject private var viewModel = QuoteSettingsViewModel()
     @Environment(\.dismiss) private var dismiss
