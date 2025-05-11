@@ -58,6 +58,9 @@ struct SettingsView: View {
                     Toggle("Enable Notifications", isOn: $isNotificationsEnabled)
                         .onChange(of: isNotificationsEnabled) { newValue in
                             UserDefaults.standard.set(newValue, forKey: "isNotificationsEnabled")
+                            
+                            NotificationService.shared.recheckNotificationSettings()
+
                             if newValue {
                                 requestNotificationPermissions()
                             }
@@ -71,6 +74,17 @@ struct SettingsView: View {
                                 .foregroundColor(.red)
                                 .frame(width: 30)
                             Text("Pomodoro Timer Settings")
+                        }
+                    }
+                }
+                
+                Section(header: Text("Motivational Quotes")) {
+                    NavigationLink(destination: QuoteSettingsView()) {
+                        HStack {
+                            Image(systemName: "quote.bubble")
+                                .foregroundColor(.purple)
+                                .frame(width: 30)
+                            Text("Motivational Quotes Settings")
                         }
                     }
                 }

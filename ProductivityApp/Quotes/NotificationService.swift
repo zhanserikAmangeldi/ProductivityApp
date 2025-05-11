@@ -15,7 +15,8 @@ class NotificationService {
     
     func scheduleQuoteNotifications() async {
         // Check if notifications are enabled
-        guard UserDefaults.standard.bool(forKey: "isQuoteNotificationsEnabled") else {
+        guard UserDefaults.standard.bool(forKey: "isQuoteNotificationsEnabled") && UserDefaults.standard.bool(forKey: "isQuoteNotificationsEnabled") else {
+            cancelQuoteNotifications()
             return
         }
         
@@ -91,6 +92,23 @@ class NotificationService {
             print("Test notification scheduled")
         } catch {
             print("Failed to schedule test notification: \(error)")
+        }
+    }
+    
+    func recheckNotificationSettings() {
+        // If general notifications are disabled, cancel all quote notifications
+        if !UserDefaults.standard.bool(forKey: "isNotificationsEnabled") {
+            cancelQuoteNotifications()
+        }
+        // If general notifications are enabled but quote notifications are disabled
+        else if !UserDefaults.standard.bool(forKey: "isQuoteNotificationsEnabled") {
+            cancelQuoteNotifications()
+        }
+        // If both are enabled, ensure notifications are scheduled
+        else {
+            Task {
+                await scheduleQuoteNotifications()
+            }
         }
     }
 }
