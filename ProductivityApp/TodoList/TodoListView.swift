@@ -119,7 +119,7 @@ struct TodoListView: View {
     private var taskListView: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView()
+                LoadingDotsView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.tasks.isEmpty {
                 emptyStateView

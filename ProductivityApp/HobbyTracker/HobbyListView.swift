@@ -17,7 +17,7 @@ struct HobbyListView: View {
         NavigationStack {
             Group {
                 if viewModel.isLoading {
-                    ProgressView()
+                    LoadingDotsView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if viewModel.hobbies.isEmpty {
                     emptyStateView

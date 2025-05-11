@@ -12,12 +12,15 @@ final class SignInEmailViewModel: ObservableObject {
     @Published var email = ""
     @Published var password = ""
     @Published var errorMessage: String?
+    @Published var isLoading = false
     
     func signIn() {
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Email or Password is not valid!"
             return
         }
+        
+        isLoading = true
         
         Task {
             do {
@@ -28,6 +31,8 @@ final class SignInEmailViewModel: ObservableObject {
                 errorMessage = error.localizedDescription
             }
         }
+        
+        isLoading = false
     }
     
     func createAccount() {
@@ -35,6 +40,8 @@ final class SignInEmailViewModel: ObservableObject {
             errorMessage = "Email or Password is not valid!"
             return
         }
+        
+        isLoading = true
         
         Task {
             do {
@@ -45,6 +52,8 @@ final class SignInEmailViewModel: ObservableObject {
                 errorMessage = error.localizedDescription
             }
         }
+        
+        isLoading = false
     }
 }
 
@@ -73,6 +82,11 @@ struct SignInEmailView: View {
                     .padding(.top, 5)
             }
             
+            if viewModel.isLoading {
+                LoadingDotsView()
+                    .padding(.vertical, 10)
+            }
+            
             Button {
                 viewModel.signIn()
             } label: {
@@ -83,6 +97,7 @@ struct SignInEmailView: View {
                     .frame(maxWidth: .infinity)
                     .background(Color.blue)
                     .cornerRadius(20)
+                    .disabled(viewModel.isLoading)
             }
             
             Button {
@@ -95,6 +110,7 @@ struct SignInEmailView: View {
                     .frame(maxWidth: .infinity)
                     .background(Color.green)
                     .cornerRadius(20)
+                    .disabled(viewModel.isLoading)
             }
             
             Spacer()
