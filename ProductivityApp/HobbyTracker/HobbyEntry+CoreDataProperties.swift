@@ -18,7 +18,8 @@ extension HobbyEntry {
     @NSManaged public var date: Date?
     @NSManaged public var notes: String?
     @NSManaged public var hobby: Hobby?
-    
+    @NSManaged public var userId: String?
+
     public var formattedDate: String {
         guard let date = date else { return "Unknown date" }
         
@@ -37,7 +38,8 @@ extension HobbyEntry : Identifiable {
         entry.id = UUID()
         entry.date = date
         entry.hobby = hobby
-        
+        entry.userId = CurrentUserService.shared.currentUserId
+
         return entry
     }
     

@@ -23,7 +23,8 @@ extension Hobby {
     @NSManaged public var dateCreated: Date?
     @NSManaged public var lastModified: Date?
     @NSManaged public var entries: NSSet?
-    
+    @NSManaged public var userId: String?
+
     // Computed properties for convenience
     
     public var unwrappedTitle: String {

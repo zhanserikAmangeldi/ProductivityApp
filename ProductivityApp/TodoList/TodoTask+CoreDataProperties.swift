@@ -25,7 +25,8 @@ extension TodoTask {
     @NSManaged public var tags: String?
     @NSManaged public var taskDescription: String?
     @NSManaged public var title: String?
-    
+    @NSManaged public var userId: String?
+
     // Computed property to handle tags as an array
     public var tagArray: [String] {
         get {
@@ -52,6 +53,8 @@ extension TodoTask : Identifiable {
         task.priority = 1 // Medium priority as default
         task.dateCreated = Date()
         task.lastModified = Date()
+        task.userId = CurrentUserService.shared.currentUserId
+        
         return task
     }
 }
