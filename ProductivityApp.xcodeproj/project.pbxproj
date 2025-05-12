@@ -21,7 +21,7 @@
 		5E9A6EE42DC6CE7A00101003 /* Exceptions for "ProductivityApp" folder in "ProductivityApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				SupportingFiles/Info.plist,
 			);
 			target = 5E9A6ED12DC6CE7900101003 /* ProductivityApp */;
 		};
@@ -166,7 +166,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 63N4JB4ZGR;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ProductivityApp/Info.plist;
+				INFOPLIST_FILE = ProductivityApp/SupportingFiles/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -194,7 +194,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 63N4JB4ZGR;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ProductivityApp/Info.plist;
+				INFOPLIST_FILE = ProductivityApp/SupportingFiles/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
