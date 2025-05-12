@@ -144,7 +144,7 @@ class HobbyDetailViewModel: ObservableObject {
     
     // Helper to create a temporary hobby for preview purposes
     func createTemporaryHobby() -> Hobby {
-        let context = hobbyManager.coreDataManager.persistentContainer.viewContext
+        let context = hobbyManager.coreDataService.persistentContainer.viewContext
         let tempHobby = Hobby(context: context)
         tempHobby.title = title
         tempHobby.hobbyDescription = description

@@ -17,7 +17,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         
         requestNotificationPermissions()
 
-        _ = CoreDataManager.shared.persistentContainer
+        _ = CoreDataService.shared.persistentContainer
 
         print("Application did finish launching")
         

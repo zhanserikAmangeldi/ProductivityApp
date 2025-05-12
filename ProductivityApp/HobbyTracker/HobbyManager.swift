@@ -12,9 +12,9 @@ import SwiftUI
 class HobbyManager {
     static let shared = HobbyManager()
     
-    public let coreDataManager = CoreDataManager.shared
+    private let coreDataService = CoreDataService.shared
     private var context: NSManagedObjectContext {
-        return coreDataManager.persistentContainer.viewContext
+        return coreDataService.viewContext
     }
     
     private init() {}
@@ -31,32 +31,34 @@ class HobbyManager {
         hobby.dateCreated = Date()
         hobby.lastModified = Date()
         
-        coreDataManager.saveContext()
+        saveContext()
         return hobby
     }
     
     func updateHobby(_ hobby: Hobby) {
         hobby.lastModified = Date()
-        coreDataManager.saveContext()
+        saveContext()
     }
     
     func deleteHobby(_ hobby: Hobby) {
         context.delete(hobby)
-        coreDataManager.saveContext()
+        saveContext()
     }
     
-    func fetchHobbies() -> [Hobby] {
+    func fetchHobbies(searchText: String? = nil) -> [Hobby] {
         let fetchRequest: NSFetchRequest<Hobby> = Hobby.fetchRequest()
+        
+        // Add search predicate if needed
+        if let searchText = searchText, !searchText.isEmpty {
+            fetchRequest.predicate = NSPredicate(format: "title CONTAINS[cd] %@ OR hobbyDescription CONTAINS[cd] %@",
+                                                searchText, searchText)
+        }
+        
         fetchRequest.sortDescriptors = [
             NSSortDescriptor(key: "lastModified", ascending: false)
         ]
         
-        do {
-            return try context.fetch(fetchRequest)
-        } catch {
-            print("Error fetching hobbies: \(error.localizedDescription)")
-            return []
-        }
+        return coreDataService.execute(fetchRequest)
     }
     
     func fetchHobby(withID id: UUID) -> Hobby? {
@@ -64,13 +66,8 @@ class HobbyManager {
         fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         fetchRequest.fetchLimit = 1
         
-        do {
-            let hobbies = try context.fetch(fetchRequest)
-            return hobbies.first
-        } catch {
-            print("Error fetching hobby with ID \(id): \(error.localizedDescription)")
-            return nil
-        }
+        let hobbies = coreDataService.execute(fetchRequest)
+        return hobbies.first
     }
     
     // MARK: - Entry Management
@@ -80,12 +77,12 @@ class HobbyManager {
         if let existingEntry = hobby.getEntry(for: date) {
             // If found, delete it (toggling off)
             context.delete(existingEntry)
-            coreDataManager.saveContext()
+            saveContext()
             return nil
         } else {
             // If not found, create a new entry (toggling on)
             let entry = HobbyEntry.createEntry(for: hobby, on: date, in: context)
-            coreDataManager.saveContext()
+            saveContext()
             return entry
         }
     }
@@ -99,10 +96,10 @@ class HobbyManager {
         // If we want to mark as completed, create a new entry
         if completed {
             let entry = HobbyEntry.createEntry(for: hobby, on: date, in: context)
-            coreDataManager.saveContext()
+            saveContext()
             return entry
         } else {
-            coreDataManager.saveContext()
+            saveContext()
             return nil
         }
     }
@@ -120,13 +117,13 @@ class HobbyManager {
         entry.notes = notes
         entry.hobby = hobby
         
-        coreDataManager.saveContext()
+        saveContext()
         return entry
     }
     
     func deleteEntry(_ entry: HobbyEntry) {
         context.delete(entry)
-        coreDataManager.saveContext()
+        saveContext()
     }
     
     func fetchEntries(for hobby: Hobby) -> [HobbyEntry] {
@@ -136,12 +133,7 @@ class HobbyManager {
             NSSortDescriptor(key: "date", ascending: false)
         ]
         
-        do {
-            return try context.fetch(fetchRequest)
-        } catch {
-            print("Error fetching entries for hobby: \(error.localizedDescription)")
-            return []
-        }
+        return coreDataService.execute(fetchRequest)
     }
     
     // MARK: - Statistics
@@ -279,5 +271,11 @@ class HobbyManager {
             ("Sleep", "bed.double.fill"),
             ("Water", "drop.fill")
         ]
+    }
+    
+    // MARK: - Private methods
+    
+    private func saveContext() {
+        coreDataService.saveContext()
     }
 }

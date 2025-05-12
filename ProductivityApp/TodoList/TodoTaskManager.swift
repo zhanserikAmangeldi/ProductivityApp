@@ -8,39 +8,19 @@
 import Foundation
 import CoreData
 
-class CoreDataManager {
-    static let shared = CoreDataManager()
+class TodoTaskManager {
+    static let shared = TodoTaskManager()
     
-    // MARK: - Core Data Stack
-    
-    lazy var persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "ProductivityApp")
-        container.loadPersistentStores { (storeDescription, error) in
-            if let error = error as NSError? {
-                print("Unresolved error \(error), \(error.userInfo)")
-            }
-        }
-        return container
-    }()
-    
-    // MARK: - Core Data Saving Support
-    
-    func saveContext() {
-        let context = persistentContainer.viewContext
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                let nserror = error as NSError
-                print("Unresolved error \(nserror), \(nserror.userInfo)")
-            }
-        }
+    private let coreDataService = CoreDataService.shared
+    private var context: NSManagedObjectContext {
+        return coreDataService.viewContext
     }
     
-    // MARK: - Todo Task Operations
+    private init() {}
     
+    // MARK: - Todo Task Operations
+
     func createTask(title: String, description: String, dueDate: Date?, priority: TaskPriority, tags: [String] = []) -> TodoTask {
-        let context = persistentContainer.viewContext
         let task = TodoTask(context: context)
         
         task.id = UUID()
@@ -63,7 +43,6 @@ class CoreDataManager {
     }
     
     func deleteTask(_ task: TodoTask) {
-        let context = persistentContainer.viewContext
         context.delete(task)
         saveContext()
     }
@@ -75,7 +54,6 @@ class CoreDataManager {
     }
     
     func fetchTasks(isCompleted: Bool? = nil, searchText: String? = nil, priorityFilter: TaskPriority? = nil, tagFilter: String? = nil) -> [TodoTask] {
-        let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         
         // Build predicates for filtering
@@ -101,7 +79,6 @@ class CoreDataManager {
             predicates.append(NSPredicate(format: "tags CONTAINS[cd] %@", tagFilter))
         }
         
-        
         // Combine predicates if needed
         if !predicates.isEmpty {
             fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
@@ -115,59 +92,36 @@ class CoreDataManager {
             NSSortDescriptor(key: "lastModified", ascending: false)
         ]
         
-        do {
-            return try context.fetch(fetchRequest)
-        } catch {
-            print("Error fetching tasks: \(error.localizedDescription)")
-            return []
-        }
+        return coreDataService.execute(fetchRequest)
     }
     
     func fetchTaskCount(isCompleted: Bool? = nil) -> Int {
-        let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         
         if let isCompleted = isCompleted {
             fetchRequest.predicate = NSPredicate(format: "isCompleted == %@", NSNumber(value: isCompleted))
         }
         
-        do {
-            return try context.count(for: fetchRequest)
-        } catch {
-            print("Error counting tasks: \(error.localizedDescription)")
-            return 0
-        }
+        return coreDataService.count(fetchRequest)
     }
     
     func fetchTask(withID id: UUID) -> TodoTask? {
-        let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         fetchRequest.fetchLimit = 1
         
-        do {
-            let tasks = try context.fetch(fetchRequest)
-            return tasks.first
-        } catch {
-            print("Error fetching task with ID \(id): \(error.localizedDescription)")
-            return nil
-        }
+        let tasks = coreDataService.execute(fetchRequest)
+        return tasks.first
     }
     
     func fetchAllTags() -> [String] {
-        let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         
-        do {
-            let tasks = try context.fetch(fetchRequest)
-            let allTags = tasks.flatMap { task in
-                return task.tagArray
-            }
-            return Array(Set(allTags)).sorted()
-        } catch {
-            print("Error fetching all tags: \(error.localizedDescription)")
-            return []
+        let tasks = coreDataService.execute(fetchRequest)
+        let allTags = tasks.flatMap { task in
+            return task.tagArray
         }
+        return Array(Set(allTags)).sorted()
     }
     
     // MARK: - Helper Methods
@@ -177,16 +131,10 @@ class CoreDataManager {
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         
-        let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "dueDate >= %@ AND dueDate < %@ AND isCompleted == %@", startOfDay as NSDate, endOfDay as NSDate, NSNumber(value: false))
         
-        do {
-            return try context.fetch(fetchRequest)
-        } catch {
-            print("Error fetching today's tasks: \(error.localizedDescription)")
-            return []
-        }
+        return coreDataService.execute(fetchRequest)
     }
     
     func getUpcomingTasks(days: Int = 7) -> [TodoTask] {
@@ -194,31 +142,25 @@ class CoreDataManager {
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfPeriod = calendar.date(byAdding: .day, value: days, to: startOfDay)!
         
-        let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "dueDate >= %@ AND dueDate <= %@ AND isCompleted == %@", startOfDay as NSDate, endOfPeriod as NSDate, NSNumber(value: false))
         
-        do {
-            return try context.fetch(fetchRequest)
-        } catch {
-            print("Error fetching upcoming tasks: \(error.localizedDescription)")
-            return []
-        }
+        return coreDataService.execute(fetchRequest)
     }
     
     func getOverdueTasks() -> [TodoTask] {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         
-        let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "dueDate < %@ AND isCompleted == %@", startOfDay as NSDate, NSNumber(value: false))
         
-        do {
-            return try context.fetch(fetchRequest)
-        } catch {
-            print("Error fetching overdue tasks: \(error.localizedDescription)")
-            return []
-        }
+        return coreDataService.execute(fetchRequest)
+    }
+    
+    // MARK: - Private methods
+    
+    private func saveContext() {
+        coreDataService.saveContext()
     }
 }
