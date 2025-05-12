@@ -32,20 +32,13 @@ This app uses the MVVM (Model-View-ViewModel) architectural pattern with UIKit n
 git clone https://github.com/yourusername/ProductivityApp.git
 ```
 
-2. Install dependencies via CocoaPods:
-
-```bash
-cd ProductivityApp
-pod install
-```
-
-3. Open the .xcworkspace file:
+2. Open the .xcworkspace file:
 
 ```bash
 open ProductivityApp.xcworkspace
 ```
 
-4. Add your Firebase configuration:
+3. Add your Firebase configuration:
 
     1. Create a Firebase project at https://console.firebase.google.com/
     2. Add an iOS app to your Firebase project
@@ -53,5 +46,5 @@ open ProductivityApp.xcworkspace
     4. Add the file to your Xcode project
 
 
-5. Build and run the project!
+4. Build and run the project!
 
