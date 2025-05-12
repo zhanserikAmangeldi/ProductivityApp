@@ -25,8 +25,8 @@ struct SettingsView: View {
         }
         
         // Load settings from UserDefaultsManager
-        _isDarkModeEnabled = State(initialValue: UserDefaultsManager.standard.bool(forKey: "isDarkModeEnabled"))
-        _isNotificationsEnabled = State(initialValue: UserDefaultsManager.standard.bool(forKey: "isNotificationsEnabled"))
+        _isDarkModeEnabled = State(initialValue: UserDefaultsManager.shared.bool(forKey: "isDarkModeEnabled"))
+        _isNotificationsEnabled = State(initialValue: UserDefaultsManager.shared.bool(forKey: "isNotificationsEnabled"))
     }
     
     var body: some View {
@@ -51,13 +51,13 @@ struct SettingsView: View {
                 Section(header: Text("App Settings")) {
                     Toggle("Dark Mode", isOn: $isDarkModeEnabled)
                         .onChange(of: isDarkModeEnabled) { newValue in
-                            UserDefaultsManager.standard.set(newValue, forKey: "isDarkModeEnabled")
+                            UserDefaultsManager.shared.setValue(newValue, forKey: "isDarkModeEnabled")
                             // TODO: Apply the mode change
                         }
                     
                     Toggle("Enable Notifications", isOn: $isNotificationsEnabled)
                         .onChange(of: isNotificationsEnabled) { newValue in
-                            UserDefaultsManager.standard.set(newValue, forKey: "isNotificationsEnabled")
+                            UserDefaultsManager.shared.setValue(newValue, forKey: "isNotificationsEnabled")
                             
                             NotificationService.shared.recheckNotificationSettings()
 

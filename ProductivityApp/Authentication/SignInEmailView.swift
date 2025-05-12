@@ -50,6 +50,9 @@ final class SignInEmailViewModel: ObservableObject {
             do {
                 let returnedUserData = try await AuthenticationManager.shared.createUser(email: email, password: password)
                 print("Successfully created user: \(returnedUserData.uid)")
+                
+                NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+
                 errorMessage = nil
             } catch {
                 errorMessage = error.localizedDescription

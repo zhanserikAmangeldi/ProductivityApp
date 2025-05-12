@@ -15,7 +15,7 @@ class NotificationService {
     
     func scheduleQuoteNotifications() async {
         // Check if notifications are enabled
-        guard UserDefaultsManager.standard.bool(forKey: "isQuoteNotificationsEnabled") && UserDefaultsManager.standard.bool(forKey: "isQuoteNotificationsEnabled") else {
+        guard UserDefaultsManager.shared.bool(forKey: "isQuoteNotificationsEnabled") && UserDefaultsManager.shared.bool(forKey: "isQuoteNotificationsEnabled") else {
             cancelQuoteNotifications()
             return
         }
@@ -97,11 +97,11 @@ class NotificationService {
     
     func recheckNotificationSettings() {
         // If general notifications are disabled, cancel all quote notifications
-        if !UserDefaultsManager.standard.bool(forKey: "isNotificationsEnabled") {
+        if !UserDefaultsManager.shared.bool(forKey: "isNotificationsEnabled") {
             cancelQuoteNotifications()
         }
         // If general notifications are enabled but quote notifications are disabled
-        else if !UserDefaultsManager.standard.bool(forKey: "isQuoteNotificationsEnabled") {
+        else if !UserDefaultsManager.shared.bool(forKey: "isQuoteNotificationsEnabled") {
             cancelQuoteNotifications()
         }
         // If both are enabled, ensure notifications are scheduled

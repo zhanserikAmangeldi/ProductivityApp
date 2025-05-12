@@ -12,7 +12,7 @@ import SwiftUI
 class HobbyManager {
     static let shared = HobbyManager()
     
-    private let coreDataService = CoreDataService.shared
+    public let coreDataService = CoreDataService.shared
     private var context: NSManagedObjectContext {
         return coreDataService.viewContext
     }

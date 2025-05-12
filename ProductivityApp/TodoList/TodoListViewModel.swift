@@ -45,7 +45,7 @@ enum TodoFilter: String, CaseIterable, Identifiable {
 
 @MainActor
 class TodoListViewModel: ObservableObject {
-    private let coreDataManager = CoreDataManager.shared
+    private let coreDataManager = TodoTaskManager.shared
     private var cancellables = Set<AnyCancellable>()
     
     @Published var tasks: [TodoTask] = []

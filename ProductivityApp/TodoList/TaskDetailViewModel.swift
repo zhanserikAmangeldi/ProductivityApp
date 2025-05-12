@@ -12,7 +12,7 @@ import Combine
 
 @MainActor
 class TaskDetailViewModel: ObservableObject {
-    private let coreDataManager = CoreDataManager.shared
+    private let coreDataManager = TodoTaskManager.shared
     private var managedObjectContext: NSManagedObjectContext
     private var task: TodoTask
     private var cancellables = Set<AnyCancellable>()
@@ -34,7 +34,7 @@ class TaskDetailViewModel: ObservableObject {
     @Published var isValid: Bool = false
     @Published var isNewTask: Bool
     
-    init(task: TodoTask? = nil, context: NSManagedObjectContext = CoreDataManager.shared.persistentContainer.viewContext) {
+    init(task: TodoTask? = nil, context: NSManagedObjectContext = CoreDataService.shared.persistentContainer.viewContext) {
         self.managedObjectContext = context
         
         if let existingTask = task {
