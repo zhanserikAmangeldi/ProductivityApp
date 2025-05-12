@@ -10,6 +10,7 @@ import SwiftUI
 struct PomodoroTimerView: View {
     @StateObject private var viewModel = PomodoroViewModel()
     @State private var showingSettings = false
+    @State private var uiRefreshTimer: Timer?
     
     var body: some View {
         NavigationStack {
@@ -73,6 +74,21 @@ struct PomodoroTimerView: View {
                         print("Error requesting notification permissions: \(error.localizedDescription)")
                     }
                 }
+                
+                // Set up a UI refresh timer that acts as a backup
+                self.uiRefreshTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak viewModel] _ in
+                    viewModel?.objectWillChange.send()
+                }
+                RunLoop.main.add(self.uiRefreshTimer!, forMode: .common)
+            }
+            .onDisappear {
+                // Clean up the UI refresh timer
+                self.uiRefreshTimer?.invalidate()
+                self.uiRefreshTimer = nil
+            }
+            // Handle app returning to foreground
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                viewModel.checkTimerStatus()
             }
         }
     }

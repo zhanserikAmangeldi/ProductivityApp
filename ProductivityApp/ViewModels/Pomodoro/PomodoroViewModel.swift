@@ -30,10 +30,18 @@ class PomodoroViewModel: ObservableObject {
         Bundle.main.url(forResource: "metronome", withExtension: "mp3")
     }
     
+    // Background mode properties
+    private var timerEndDate: Date?
+    private let timerNotificationIdentifier = "pomodoro_timer_notification"
+    
     init() {
         // Initialize with settings
         self.totalSeconds = settingsManager.settings.focusDuration
         self.remainingSeconds = totalSeconds
+        
+        // Initialize the round counter based on completed sessions
+        let completedFocusSessions = settingsManager.session.completedFocusSessions
+        self.currentRound = (completedFocusSessions / settingsManager.settings.roundsBeforeLongBreak) + 1
         
         // Listen for settings changes
         settingsManager.$settings
@@ -57,6 +65,10 @@ class PomodoroViewModel: ObservableObject {
                 } else {
                     self.stopMetronome()
                 }
+                
+                // Update round calculation when settings change
+                let completedFocusSessions = self.settingsManager.session.completedFocusSessions
+                self.currentRound = (completedFocusSessions / newSettings.roundsBeforeLongBreak) + 1
             }
             .store(in: &cancellables)
     }
@@ -72,6 +84,11 @@ class PomodoroViewModel: ObservableObject {
         
         cancellables.removeAll()
         
+        // Cancel any pending notifications when viewmodel is deinitialized
+        Task {
+            await cancelTimerEndNotification()
+        }
+        
         print("PomodoroViewModel deinit completed")
     }
     
@@ -81,31 +98,62 @@ class PomodoroViewModel: ObservableObject {
         if timerMode == .initial || timerMode == .paused {
             timerMode = .running
             
+            // Calculate end date and store it for background tracking
+            timerEndDate = Date().addingTimeInterval(remainingSeconds)
+            
+            // Schedule a notification for when the timer ends
+            if let endDate = timerEndDate {
+                Task {
+                    await scheduleTimerEndNotification(
+                        endDate: endDate,
+                        type: timerType
+                    )
+                }
+            }
+            
             // Start metronome if enabled
             if settingsManager.settings.enableMetronome {
                 startMetronome()
             }
             
-            timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            // Create and start the timer on the main thread
+            self.timer?.invalidate() // Safety: invalidate any existing timer
+            
+            self.timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
                 guard let self = self else { return }
-                
-                if self.remainingSeconds > 0 {
-                    self.remainingSeconds -= 1
-                    self.updateProgress()
-                } else {
-                    self.timerMode = .finished
-                    self.stopTimer()
-                    self.stopMetronome()
-                    self.handleTimerCompletion()
+                // Dispatch to main thread to ensure UI updates
+                DispatchQueue.main.async {
+                    if self.remainingSeconds > 0 {
+                        self.remainingSeconds -= 1
+                        self.updateProgress()
+                    } else {
+                        self.timerMode = .finished
+                        self.stopTimer()
+                        self.stopMetronome()
+                        self.handleTimerCompletion()
+                    }
                 }
             }
+            
+            // Make sure we use the common run loop mode for better UI responsiveness
+            RunLoop.main.add(self.timer!, forMode: .common)
         }
     }
     
     func pauseTimer() {
-        timerMode = .paused
+        // First invalidate the timer to ensure countdown stops immediately
         stopTimer()
+        
+        // Then update the UI state
+        timerMode = .paused
+        
+        // Stop metronome
         stopMetronome()
+        
+        // Cancel notification but don't wait for it to complete
+        Task {
+            await cancelTimerEndNotification()
+        }
     }
     
     func resetTimer() {
@@ -114,11 +162,23 @@ class PomodoroViewModel: ObservableObject {
         timerMode = .initial
         remainingSeconds = totalSeconds
         updateProgress()
+        
+        Task {
+            await cancelTimerEndNotification()
+        }
+        
+        timerEndDate = nil
     }
     
     func skipToNext() {
         stopTimer()
         stopMetronome()
+        
+        Task {
+            await cancelTimerEndNotification()
+        }
+        
+        timerEndDate = nil
         
         // Handle completion based on current type
         if timerType == .focus {
@@ -128,11 +188,74 @@ class PomodoroViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Background Mode Functions
+    
+    private func scheduleTimerEndNotification(endDate: Date, type: TimerType) async {
+        // Cancel any existing timer notifications first
+        await cancelTimerEndNotification()
+        
+        let center = UNUserNotificationCenter.current()
+        let content = UNMutableNotificationContent()
+        
+        // Set title and message based on timer type
+        if type == .focus {
+            content.title = "Focus session completed!"
+            content.body = "Time for a break."
+        } else if type == .shortBreak {
+            content.title = "Short break completed!"
+            content.body = "Ready for next focus session?"
+        } else {
+            content.title = "Long break completed!"
+            content.body = "Ready for next focus session?"
+        }
+        
+        content.sound = .default
+        
+        // Create trigger based on timer end date
+        let triggerDate = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: endDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
+        
+        // Create request
+        let request = UNNotificationRequest(
+            identifier: timerNotificationIdentifier,
+            content: content,
+            trigger: trigger
+        )
+        
+        do {
+            try await center.add(request)
+        } catch {
+            print("Error scheduling timer notification: \(error.localizedDescription)")
+        }
+    }
+    
+    private func cancelTimerEndNotification() async {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [timerNotificationIdentifier])
+    }
+    
+    func checkTimerStatus() {
+        guard timerMode == .running, let endDate = timerEndDate else { return }
+        
+        if Date() >= endDate {
+            // Timer should have completed
+            timerMode = .finished
+            remainingSeconds = 0
+            updateProgress()
+            handleTimerCompletion()
+        } else {
+            // Timer is still running, update remaining time
+            remainingSeconds = max(0, endDate.timeIntervalSinceNow)
+            updateProgress()
+        }
+    }
+    
     // MARK: - Helper Functions
     
     private func stopTimer() {
-        timer?.invalidate()
-        timer = nil
+        if let timer = self.timer, timer.isValid {
+            timer.invalidate()
+        }
+        self.timer = nil
     }
     
     private func updateProgress() {
@@ -152,14 +275,26 @@ class PomodoroViewModel: ObservableObject {
         settingsManager.updateCompletedFocusSession(duration: settingsManager.settings.focusDuration)
         
         // Show notification
-        showNotification(title: "Focus session completed!", body: "Time for a break.")
+        Task {
+            await showNotification(
+                title: "Focus session completed!",
+                body: "Time for a break."
+            )
+        }
         
-        // Determine next timer type
-        if currentRound % settingsManager.settings.roundsBeforeLongBreak == 0 {
+        // Increment the completed focus sessions count for round tracking
+        let completedFocusSessions = settingsManager.session.completedFocusSessions
+        
+        // Determine next timer type based on completed sessions
+        // We need to use the total completed sessions, not just the current round
+        if completedFocusSessions > 0 && completedFocusSessions % settingsManager.settings.roundsBeforeLongBreak == 0 {
             switchToTimerType(.longBreak)
         } else {
             switchToTimerType(.shortBreak)
         }
+        
+        // Update the current round display - add 1 because we're counting from 1, not 0
+        currentRound = (completedFocusSessions / settingsManager.settings.roundsBeforeLongBreak) + 1
         
         // Auto start break if enabled
         if settingsManager.settings.autoStartBreaks {
@@ -172,12 +307,14 @@ class PomodoroViewModel: ObservableObject {
         settingsManager.updateCompletedBreak(isLongBreak: timerType == .longBreak)
         
         // Show notification
-        showNotification(title: "Break completed!", body: "Ready for next focus session?")
-        
-        // If it was a long break, increment the round
-        if timerType == .longBreak {
-            currentRound += 1
+        Task {
+            await showNotification(
+                title: "Break completed!",
+                body: "Ready for next focus session?"
+            )
         }
+        
+        // We don't need to increment rounds here anymore as it's now handled based on total completed sessions
         
         // Switch to focus mode
         switchToTimerType(.focus)
@@ -208,7 +345,7 @@ class PomodoroViewModel: ObservableObject {
     
     // MARK: - Notification Functions
     
-    private func showNotification(title: String, body: String) {
+    private func showNotification(title: String, body: String) async {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -220,10 +357,10 @@ class PomodoroViewModel: ObservableObject {
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         )
         
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Error showing notification: \(error.localizedDescription)")
-            }
+        do {
+            try await UNUserNotificationCenter.current().add(request)
+        } catch {
+            print("Error showing notification: \(error.localizedDescription)")
         }
     }
     
