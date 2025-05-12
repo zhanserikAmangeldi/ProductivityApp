@@ -2,7 +2,7 @@
 //  CurrentUserService.swift
 //  ProductivityApp
 //
-//  Created by Kassiman Alikhan on 12.05.2025.
+//  Created by Alikhan Kassiman on 12.05.2025.
 //
 
 import Foundation

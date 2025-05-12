@@ -17,17 +17,17 @@ class QuoteSettingsViewModel: ObservableObject {
     private let notificationService = NotificationService.shared
     
     init() {
-        self.areGeneralNotificationsEnabled = UserDefaults.standard.bool(forKey: "isNotificationsEnabled")
-        self.isQuoteNotificationsEnabled = UserDefaults.standard.bool(forKey: "isQuoteNotificationsEnabled")
-        self.notificationFrequency = UserDefaults.standard.integer(forKey: "quoteNotificationFrequency")
+        self.areGeneralNotificationsEnabled = UserDefaultsManager.shared.bool(forKey: "isNotificationsEnabled")
+        self.isQuoteNotificationsEnabled = UserDefaultsManager.shared.bool(forKey: "isQuoteNotificationsEnabled")
+        self.notificationFrequency = UserDefaultsManager.shared.integer(forKey: "quoteNotificationFrequency")
         if self.notificationFrequency == 0 { self.notificationFrequency = 2 } // Default to 2 hours
     }
     
     func saveSettings() {
         let effectiveQuoteNotificationsEnabled = areGeneralNotificationsEnabled && isQuoteNotificationsEnabled
         
-        UserDefaults.standard.set(effectiveQuoteNotificationsEnabled, forKey: "isQuoteNotificationsEnabled")
-        UserDefaults.standard.set(notificationFrequency, forKey: "quoteNotificationFrequency")
+        UserDefaultsManager.shared.setValue(effectiveQuoteNotificationsEnabled, forKey: "isQuoteNotificationsEnabled")
+        UserDefaultsManager.shared.setValue(notificationFrequency, forKey: "quoteNotificationFrequency")
         
         Task {
             await updateNotifications()
