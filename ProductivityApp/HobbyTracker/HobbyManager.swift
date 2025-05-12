@@ -30,6 +30,7 @@ class HobbyManager {
         hobby.colorHex = colorHex
         hobby.dateCreated = Date()
         hobby.lastModified = Date()
+        hobby.userId = CurrentUserService.shared.currentUserId
         
         saveContext()
         return hobby
@@ -48,10 +49,21 @@ class HobbyManager {
     func fetchHobbies(searchText: String? = nil) -> [Hobby] {
         let fetchRequest: NSFetchRequest<Hobby> = Hobby.fetchRequest()
         
-        // Add search predicate if needed
+        var predicates: [NSPredicate] = []
+        
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
+        
+        
         if let searchText = searchText, !searchText.isEmpty {
-            fetchRequest.predicate = NSPredicate(format: "title CONTAINS[cd] %@ OR hobbyDescription CONTAINS[cd] %@",
-                                                searchText, searchText)
+            predicates.append(NSPredicate(format: "title CONTAINS[cd] %@ OR hobbyDescription CONTAINS[cd] %@",
+                                       searchText, searchText))
+        }
+        
+        if !predicates.isEmpty {
+            fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         }
         
         fetchRequest.sortDescriptors = [
@@ -63,7 +75,17 @@ class HobbyManager {
     
     func fetchHobby(withID id: UUID) -> Hobby? {
         let fetchRequest: NSFetchRequest<Hobby> = Hobby.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        
+        var predicates: [NSPredicate] = []
+        
+        predicates.append(NSPredicate(format: "id == %@", id as CVarArg))
+        
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
+        
+        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         fetchRequest.fetchLimit = 1
         
         let hobbies = coreDataService.execute(fetchRequest)
@@ -116,6 +138,7 @@ class HobbyManager {
         entry.date = date
         entry.notes = notes
         entry.hobby = hobby
+        entry.userId = CurrentUserService.shared.currentUserId
         
         saveContext()
         return entry
@@ -128,7 +151,17 @@ class HobbyManager {
     
     func fetchEntries(for hobby: Hobby) -> [HobbyEntry] {
         let fetchRequest: NSFetchRequest<HobbyEntry> = HobbyEntry.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "hobby == %@", hobby)
+        
+        var predicates: [NSPredicate] = []
+        
+        predicates.append(NSPredicate(format: "hobby == %@", hobby))
+        
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
+        
+        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         fetchRequest.sortDescriptors = [
             NSSortDescriptor(key: "date", ascending: false)
         ]
