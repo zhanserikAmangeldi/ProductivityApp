@@ -62,7 +62,10 @@ final class AuthenticationManager {
     }
     
     func signOut() throws {
-        try Auth.auth().signOut()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.authState = .loggedOut
+        }
     }
     
 }

@@ -9,9 +9,53 @@ import UIKit
 import SwiftUI
 
 class MainTabBarController: UITabBarController {
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTabs()
+        applyCurrentTheme()
+        
+        NotificationCenter.default.addObserver(
+            forName: ThemeManager.themeChangedNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let theme = notification.object as? AppTheme else { return }
+            
+            self.applyTheme(theme)
+        }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func applyCurrentTheme() {
+        applyTheme(ThemeManager.shared.currentTheme)
+    }
+    
+    private func applyTheme(_ theme: AppTheme) {
+        overrideUserInterfaceStyle = theme.uiInterfaceStyle
+        setNeedsStatusBarAppearanceUpdate()
+    }
+    
+    func prepareForRemoval() {
+        print("MainTabBarController - prepareForRemoval called")
+        
+        if let pomodoroVC = viewControllers?[0] as? UIHostingController<PomodoroTimerView> {
+            let pomodoroView = pomodoroVC.rootView
+            
+            if let mirror = Mirror(reflecting: pomodoroView).children.first(where: { $0.label == "viewModel" }),
+               let viewModel = mirror.value as? PomodoroViewModel {
+                viewModel.prepareForDismissal()
+            } else {
+                print("Could not access PomodoroViewModel for cleanup")
+            }
+        }
+        
+        // Remove notification observer
+        NotificationCenter.default.removeObserver(self)
     }
     
     private func setupTabs() {

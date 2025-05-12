@@ -17,6 +17,18 @@ class RootViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         
+        // Add theme observer
+        NotificationCenter.default.addObserver(
+            forName: ThemeManager.themeChangedNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let theme = notification.object as? AppTheme else { return }
+            
+            self.view.window?.overrideUserInterfaceStyle = theme.uiInterfaceStyle
+        }
+        
         AuthenticationManager.shared.$authState.sink { [weak self] state in
             switch state {
             case .loggedIn:
@@ -29,17 +41,42 @@ class RootViewController: UIViewController {
         .store(in: &cancellables)
     }
     
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     private func clearUserCaches() {
-        QuotesService.shared.clearCache()
+        // Perform on main thread to be safe
+        DispatchQueue.main.async {
+            QuotesService.shared.clearCache()
+        }
     }
     
     private func showAuthenticationFlow() {
-        // Remove any existing child view controllers
-        children.forEach {
-            $0.willMove(toParent: nil)
-            $0.view.removeFromSuperview()
-            $0.removeFromParent()
+        // Ensure we're on the main thread
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.showAuthenticationFlow()
+            }
+            return
         }
+        
+        print("RootViewController - showAuthenticationFlow called")
+        
+        // First properly clean up any MainTabBarController
+        for child in children {
+            if let mainTabBar = child as? MainTabBarController {
+                print("Found MainTabBarController, preparing for removal")
+                mainTabBar.prepareForRemoval()
+            }
+            
+            child.willMove(toParent: nil)
+            child.view.removeFromSuperview()
+            child.removeFromParent()
+        }
+        
+        // Apply current theme to this view controller's window
+        self.view.window?.overrideUserInterfaceStyle = ThemeManager.shared.currentTheme.uiInterfaceStyle
         
         // Create the SwiftUI authentication view
         let authenticationView = SignInEmailView()
@@ -63,9 +100,21 @@ class RootViewController: UIViewController {
         ])
         
         hostingController.didMove(toParent: self)
+        
+        print("AuthenticationFlow setup completed")
     }
     
     private func showMainFlow() {
+        // Ensure we're on the main thread
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.showMainFlow()
+            }
+            return
+        }
+        
+        print("RootViewController - showMainFlow called")
+        
         // Remove any existing child view controllers
         children.forEach {
             $0.willMove(toParent: nil)
@@ -90,5 +139,7 @@ class RootViewController: UIViewController {
         ])
         
         mainTabBarController.didMove(toParent: self)
+        
+        print("MainFlow setup completed")
     }
 }

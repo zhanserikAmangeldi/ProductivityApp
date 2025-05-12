@@ -10,10 +10,11 @@ import SwiftUI
 struct SettingsView: View {
     @State private var email: String = ""
     @State private var errorMessage: String?
-    @State private var isDarkModeEnabled: Bool = false
+    @State private var isDarkModeEnabled: Bool
     @State private var isNotificationsEnabled: Bool = false
     @State private var showingHowItWorks = false
     @State private var showingAbout = false
+
     
     init() {
         // Will try to get the current user's email
@@ -25,7 +26,7 @@ struct SettingsView: View {
         }
         
         // Load settings from UserDefaultsManager
-        _isDarkModeEnabled = State(initialValue: UserDefaultsManager.shared.bool(forKey: "isDarkModeEnabled"))
+        _isDarkModeEnabled = State(initialValue: ThemeManager.shared.isDarkModeEnabled)
         _isNotificationsEnabled = State(initialValue: UserDefaultsManager.shared.bool(forKey: "isNotificationsEnabled"))
     }
     
@@ -51,8 +52,7 @@ struct SettingsView: View {
                 Section(header: Text("App Settings")) {
                     Toggle("Dark Mode", isOn: $isDarkModeEnabled)
                         .onChange(of: isDarkModeEnabled) { newValue in
-                            UserDefaultsManager.shared.setValue(newValue, forKey: "isDarkModeEnabled")
-                            // TODO: Apply the mode change
+                            ThemeManager.shared.setTheme(newValue)
                         }
                     
                     Toggle("Enable Notifications", isOn: $isNotificationsEnabled)

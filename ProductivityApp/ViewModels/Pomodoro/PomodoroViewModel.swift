@@ -34,7 +34,11 @@ class PomodoroViewModel: ObservableObject {
     private var timerEndDate: Date?
     private let timerNotificationIdentifier = "pomodoro_timer_notification"
     
+    // Task management
+    private var taskList = Set<Task<Void, Never>>()
+    
     init() {
+        print("PomodoroViewModel init called")
         // Initialize with settings
         self.totalSeconds = settingsManager.settings.focusDuration
         self.remainingSeconds = totalSeconds
@@ -75,6 +79,14 @@ class PomodoroViewModel: ObservableObject {
     
     deinit {
         print("PomodoroViewModel deinit called")
+        
+        // Cancel all tasks first
+        for task in taskList {
+            task.cancel()
+        }
+        taskList.removeAll()
+        
+        // Then stop timer
         if let timer = timer {
             timer.invalidate()
         }
@@ -84,12 +96,34 @@ class PomodoroViewModel: ObservableObject {
         
         cancellables.removeAll()
         
-        // Cancel any pending notifications when viewmodel is deinitialized
-        Task {
-            await cancelTimerEndNotification()
-        }
+        // Cancel any pending notifications directly
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: [timerNotificationIdentifier]
+        )
         
         print("PomodoroViewModel deinit completed")
+    }
+    
+    // Public cleanup method for view controller transitions
+    func prepareForDismissal() {
+        print("prepareForDismissal called")
+        // Stop everything and cancel all tasks
+        stopTimer()
+        stopMetronome()
+        
+        // Explicitly cancel all tasks
+        for task in taskList {
+            task.cancel()
+        }
+        taskList.removeAll()
+        
+        // Cancel notification directly
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: [timerNotificationIdentifier]
+        )
+        
+        // Remove all cancellables
+        cancellables.removeAll()
     }
     
     // MARK: - Timer Control Functions
@@ -103,12 +137,7 @@ class PomodoroViewModel: ObservableObject {
             
             // Schedule a notification for when the timer ends
             if let endDate = timerEndDate {
-                Task {
-                    await scheduleTimerEndNotification(
-                        endDate: endDate,
-                        type: timerType
-                    )
-                }
+                scheduleTimerEndNotificationSafely(endDate: endDate, type: timerType)
             }
             
             // Start metronome if enabled
@@ -122,7 +151,8 @@ class PomodoroViewModel: ObservableObject {
             self.timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
                 guard let self = self else { return }
                 // Dispatch to main thread to ensure UI updates
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
                     if self.remainingSeconds > 0 {
                         self.remainingSeconds -= 1
                         self.updateProgress()
@@ -140,6 +170,15 @@ class PomodoroViewModel: ObservableObject {
         }
     }
     
+    // Safe wrapper for scheduleTimerEndNotification
+    private func scheduleTimerEndNotificationSafely(endDate: Date, type: TimerType) {
+        let task = Task { [weak self] in
+            guard let self = self else { return }
+            await self.scheduleTimerEndNotification(endDate: endDate, type: type)
+        }
+        taskList.insert(task)
+    }
+    
     func pauseTimer() {
         // First invalidate the timer to ensure countdown stops immediately
         stopTimer()
@@ -151,9 +190,7 @@ class PomodoroViewModel: ObservableObject {
         stopMetronome()
         
         // Cancel notification but don't wait for it to complete
-        Task {
-            await cancelTimerEndNotification()
-        }
+        cancelTimerEndNotificationSafely()
     }
     
     func resetTimer() {
@@ -163,9 +200,7 @@ class PomodoroViewModel: ObservableObject {
         remainingSeconds = totalSeconds
         updateProgress()
         
-        Task {
-            await cancelTimerEndNotification()
-        }
+        cancelTimerEndNotificationSafely()
         
         timerEndDate = nil
     }
@@ -174,9 +209,7 @@ class PomodoroViewModel: ObservableObject {
         stopTimer()
         stopMetronome()
         
-        Task {
-            await cancelTimerEndNotification()
-        }
+        cancelTimerEndNotificationSafely()
         
         timerEndDate = nil
         
@@ -229,6 +262,15 @@ class PomodoroViewModel: ObservableObject {
         }
     }
     
+    // Safe wrapper for cancelTimerEndNotification
+    private func cancelTimerEndNotificationSafely() {
+        let task = Task { [weak self] in
+            guard let self = self else { return }
+            await self.cancelTimerEndNotification()
+        }
+        taskList.insert(task)
+    }
+    
     private func cancelTimerEndNotification() async {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [timerNotificationIdentifier])
     }
@@ -275,12 +317,10 @@ class PomodoroViewModel: ObservableObject {
         settingsManager.updateCompletedFocusSession(duration: settingsManager.settings.focusDuration)
         
         // Show notification
-        Task {
-            await showNotification(
-                title: "Focus session completed!",
-                body: "Time for a break."
-            )
-        }
+        showNotificationSafely(
+            title: "Focus session completed!",
+            body: "Time for a break."
+        )
         
         // Increment the completed focus sessions count for round tracking
         let completedFocusSessions = settingsManager.session.completedFocusSessions
@@ -307,12 +347,10 @@ class PomodoroViewModel: ObservableObject {
         settingsManager.updateCompletedBreak(isLongBreak: timerType == .longBreak)
         
         // Show notification
-        Task {
-            await showNotification(
-                title: "Break completed!",
-                body: "Ready for next focus session?"
-            )
-        }
+        showNotificationSafely(
+            title: "Break completed!",
+            body: "Ready for next focus session?"
+        )
         
         // We don't need to increment rounds here anymore as it's now handled based on total completed sessions
         
@@ -344,6 +382,15 @@ class PomodoroViewModel: ObservableObject {
     }
     
     // MARK: - Notification Functions
+    
+    // Safe wrapper for showNotification
+    private func showNotificationSafely(title: String, body: String) {
+        let task = Task { [weak self] in
+            guard let self = self else { return }
+            await self.showNotification(title: title, body: body)
+        }
+        taskList.insert(task)
+    }
     
     private func showNotification(title: String, body: String) async {
         let content = UNMutableNotificationContent()
