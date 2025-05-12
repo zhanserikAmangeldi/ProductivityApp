@@ -26,6 +26,9 @@ final class SignInEmailViewModel: ObservableObject {
             do {
                 let returnedUserData = try await AuthenticationManager.shared.signIn(email: email, password: password)
                 print("Successfully signed in user: \(returnedUserData.uid)")
+                
+                NotificationCenter.default.post(name: NSNotification.Name("UserDidLogin"), object: nil)
+                
                 errorMessage = nil
             } catch {
                 errorMessage = error.localizedDescription

@@ -18,12 +18,76 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         requestNotificationPermissions()
 
         _ = CoreDataService.shared.persistentContainer
+        
+        NotificationCenter.default.addObserver(self,
+                                             selector: #selector(userLoggedIn),
+                                             name: NSNotification.Name("UserDidLogin"),
+                                             object: nil)
 
         print("Application did finish launching")
         
         return true
     }
     
+    @objc func userLoggedIn() {
+         // Migrate data when a user logs in
+         migrateExistingData()
+     }
+     
+     func migrateExistingData() {
+         guard let userId = CurrentUserService.shared.currentUserId else { return }
+         
+         // Check if we've already migrated
+         let isMigrated = UserDefaults.standard.bool(forKey: "dataMigratedForUser_\(userId)")
+         if isMigrated { return }
+         
+         // Migrate Core Data entities
+         migrateTasksToUser(userId)
+         migrateHobbiesToUser(userId)
+         migrateHobbyEntriesToUser(userId)
+         
+         // Mark as migrated
+         UserDefaults.standard.set(true, forKey: "dataMigratedForUser_\(userId)")
+     }
+     
+     func migrateTasksToUser(_ userId: String) {
+         let context = CoreDataService.shared.viewContext
+         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
+         fetchRequest.predicate = NSPredicate(format: "userId == nil")
+         
+         if let tasks = try? context.fetch(fetchRequest) {
+             for task in tasks {
+                 task.userId = userId
+             }
+             try? context.save()
+         }
+     }
+     
+     func migrateHobbiesToUser(_ userId: String) {
+         let context = CoreDataService.shared.viewContext
+         let fetchRequest: NSFetchRequest<Hobby> = Hobby.fetchRequest()
+         fetchRequest.predicate = NSPredicate(format: "userId == nil")
+         
+         if let hobbies = try? context.fetch(fetchRequest) {
+             for hobby in hobbies {
+                 hobby.userId = userId
+             }
+             try? context.save()
+         }
+     }
+     
+    func migrateHobbyEntriesToUser(_ userId: String) {
+        let context = CoreDataService.shared.viewContext
+        let fetchRequest: NSFetchRequest<HobbyEntry> = HobbyEntry.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "userId == nil")
+        
+        if let entries = try? context.fetch(fetchRequest) {
+            for entry in entries {
+                entry.userId = userId
+            }
+            try? context.save()
+        }
+    }
     private func setupNotifications() {
         let center = UNUserNotificationCenter.current()
         center.delegate = self
