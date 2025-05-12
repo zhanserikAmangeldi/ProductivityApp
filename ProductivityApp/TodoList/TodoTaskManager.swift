@@ -32,7 +32,8 @@ class TodoTaskManager {
         task.dateCreated = Date()
         task.lastModified = Date()
         task.tagArray = tags
-        
+        task.userId = CurrentUserService.shared.currentUserId
+
         saveContext()
         return task
     }
@@ -58,6 +59,11 @@ class TodoTaskManager {
         
         // Build predicates for filtering
         var predicates: [NSPredicate] = []
+        
+
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
         
         // Filter by completion status if specified
         if let isCompleted = isCompleted {
@@ -98,8 +104,18 @@ class TodoTaskManager {
     func fetchTaskCount(isCompleted: Bool? = nil) -> Int {
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
         
+        var predicates: [NSPredicate] = []
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
+        
         if let isCompleted = isCompleted {
             fetchRequest.predicate = NSPredicate(format: "isCompleted == %@", NSNumber(value: isCompleted))
+        }
+        
+        if !predicates.isEmpty {
+            fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         }
         
         return coreDataService.count(fetchRequest)
@@ -107,7 +123,17 @@ class TodoTaskManager {
     
     func fetchTask(withID id: UUID) -> TodoTask? {
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+
+        var predicates: [NSPredicate] = []
+
+        predicates.append(NSPredicate(format: "id == %@", id as CVarArg))
+
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
+        
+        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         fetchRequest.fetchLimit = 1
         
         let tasks = coreDataService.execute(fetchRequest)
@@ -116,6 +142,11 @@ class TodoTaskManager {
     
     func fetchAllTags() -> [String] {
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
+        
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            fetchRequest.predicate = NSPredicate(format: "userId == %@", userId)
+        }
         
         let tasks = coreDataService.execute(fetchRequest)
         let allTags = tasks.flatMap { task in
@@ -132,7 +163,18 @@ class TodoTaskManager {
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "dueDate >= %@ AND dueDate < %@ AND isCompleted == %@", startOfDay as NSDate, endOfDay as NSDate, NSNumber(value: false))
+        
+        var predicates: [NSPredicate] = []
+        
+        predicates.append(NSPredicate(format: "dueDate >= %@ AND dueDate < %@ AND isCompleted == %@",
+                                     startOfDay as NSDate, endOfDay as NSDate, NSNumber(value: false)))
+        
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
+        
+        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         
         return coreDataService.execute(fetchRequest)
     }
@@ -143,7 +185,18 @@ class TodoTaskManager {
         let endOfPeriod = calendar.date(byAdding: .day, value: days, to: startOfDay)!
         
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "dueDate >= %@ AND dueDate <= %@ AND isCompleted == %@", startOfDay as NSDate, endOfPeriod as NSDate, NSNumber(value: false))
+        
+        var predicates: [NSPredicate] = []
+        
+        predicates.append(NSPredicate(format: "dueDate >= %@ AND dueDate <= %@ AND isCompleted == %@",
+                                     startOfDay as NSDate, endOfPeriod as NSDate, NSNumber(value: false)))
+        
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
+        
+        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         
         return coreDataService.execute(fetchRequest)
     }
@@ -153,7 +206,18 @@ class TodoTaskManager {
         let startOfDay = calendar.startOfDay(for: Date())
         
         let fetchRequest: NSFetchRequest<TodoTask> = TodoTask.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "dueDate < %@ AND isCompleted == %@", startOfDay as NSDate, NSNumber(value: false))
+        
+        var predicates: [NSPredicate] = []
+        
+        predicates.append(NSPredicate(format: "dueDate < %@ AND isCompleted == %@",
+                                     startOfDay as NSDate, NSNumber(value: false)))
+        
+        
+        if let userId = CurrentUserService.shared.currentUserId {
+            predicates.append(NSPredicate(format: "userId == %@", userId))
+        }
+        
+        fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         
         return coreDataService.execute(fetchRequest)
     }
