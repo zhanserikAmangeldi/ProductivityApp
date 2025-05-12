@@ -14,10 +14,10 @@ import Combine
 class TaskDetailViewModel: ObservableObject {
     private let coreDataManager = TodoTaskManager.shared
     private var managedObjectContext: NSManagedObjectContext
-    private var task: TodoTask
+    private var task: TodoTask?  // Change to optional
     private var cancellables = Set<AnyCancellable>()
     
-    // Published properties for form fields
+    // Published properties for form fields remain the same
     @Published var title: String = ""
     @Published var description: String = ""
     @Published var dueDate: Date = Date()
@@ -40,29 +40,39 @@ class TaskDetailViewModel: ObservableObject {
         if let existingTask = task {
             self.task = existingTask
             self.isNewTask = false
+            
+            // Load data from the existing task
+            self.title = existingTask.title ?? ""
+            self.description = existingTask.taskDescription ?? ""
+            if let dueDate = existingTask.dueDate {
+                self.dueDate = dueDate
+                self.hasDueDate = true
+            } else {
+                self.hasDueDate = false
+                // Set default due date to tomorrow at noon
+                self.dueDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+                let noon = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: self.dueDate) ?? self.dueDate
+                self.dueDate = noon
+            }
+            self.isCompleted = existingTask.isCompleted
+            self.priority = TaskPriority(rawValue: existingTask.priority) ?? .medium
+            self.tags = existingTask.tagArray
         } else {
-            self.task = TodoTask.emptyTask(context: context)
+            // Don't create a task yet - just set isNewTask to true
             self.isNewTask = true
-        }
-        
-        // Load data from the task
-        self.title = task?.title ?? ""
-        self.description = task?.taskDescription ?? ""
-        if let dueDate = task?.dueDate {
-            self.dueDate = dueDate
-            self.hasDueDate = true
-        } else {
+            
+            // Set default values
+            self.title = ""
+            self.description = ""
             self.hasDueDate = false
             // Set default due date to tomorrow at noon
             self.dueDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
             let noon = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: self.dueDate) ?? self.dueDate
             self.dueDate = noon
+            self.isCompleted = false
+            self.priority = .medium
+            self.tags = []
         }
-        self.isCompleted = task?.isCompleted ?? false
-        if let priorityValue = task?.priority {
-            self.priority = TaskPriority(rawValue: priorityValue)!
-        }
-        self.tags = task?.tagArray ?? []
         
         // Observe form validation
         Publishers.CombineLatest($title, $description)
@@ -89,6 +99,21 @@ class TaskDetailViewModel: ObservableObject {
         isSaving = true
         errorMessage = nil
         
+        // Create a new task if this is a new task
+        if isNewTask {
+            task = TodoTask(context: managedObjectContext)
+            task?.id = UUID()
+            task?.dateCreated = Date()
+            task?.userId = CurrentUserService.shared.currentUserId
+        }
+        
+        // Make sure we have a task now
+        guard let task = task else {
+            errorMessage = "Could not create task"
+            isSaving = false
+            return false
+        }
+        
         // Update task properties
         task.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         task.taskDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -97,10 +122,6 @@ class TaskDetailViewModel: ObservableObject {
         task.priority = Int16(priority.rawValue)
         task.tagArray = tags
         task.lastModified = Date()
-        
-        if task.dateCreated == nil {
-            task.dateCreated = Date()
-        }
         
         // Save to Core Data
         do {
@@ -178,6 +199,6 @@ class TaskDetailViewModel: ObservableObject {
     }
     
     var taskId: UUID? {
-        return task.id
+        return task?.id
     }
 }
