@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788" systemVersion="24C101" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="Hobby" representedClassName="Hobby" syncable="YES">
+        <attribute name="colorHex" optional="YES" attributeType="String"/>
+        <attribute name="dateCreated" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="hobbyDescription" optional="YES" attributeType="String"/>
+        <attribute name="iconName" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lastModified" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="userId" optional="YES" attributeType="String"/>
+        <relationship name="entries" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="HobbyEntry" inverseName="hobby" inverseEntity="HobbyEntry"/>
+    </entity>
+    <entity name="HobbyEntry" representedClassName="HobbyEntry" syncable="YES">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="userId" optional="YES" attributeType="String"/>
+        <relationship name="hobby" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Hobby" inverseName="entries" inverseEntity="Hobby"/>
+    </entity>
     <entity name="TodoTask" representedClassName="TodoTask" syncable="YES">
         <attribute name="dateCreated" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="dueDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -10,21 +28,6 @@
         <attribute name="tags" optional="YES" attributeType="String"/>
         <attribute name="taskDescription" optional="YES" attributeType="String"/>
         <attribute name="title" optional="YES" attributeType="String"/>
-    </entity>
-    <entity name="Hobby" representedClassName="Hobby" syncable="YES">
-        <attribute name="colorHex" optional="YES" attributeType="String"/>
-        <attribute name="dateCreated" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="hobbyDescription" optional="YES" attributeType="String"/>
-        <attribute name="iconName" optional="YES" attributeType="String"/>
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="lastModified" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="title" optional="YES" attributeType="String"/>
-        <relationship name="entries" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="HobbyEntry" inverseName="hobby" inverseEntity="HobbyEntry"/>
-    </entity>
-    <entity name="HobbyEntry" representedClassName="HobbyEntry" syncable="YES">
-        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="notes" optional="YES" attributeType="String"/>
-        <relationship name="hobby" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Hobby" inverseName="entries" inverseEntity="Hobby"/>
+        <attribute name="userId" optional="YES" attributeType="String"/>
     </entity>
 </model>
