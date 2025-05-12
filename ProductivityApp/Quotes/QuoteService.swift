@@ -15,6 +15,10 @@ class QuotesService {
     
     private init() {}
     
+    func clearCache() {
+        cache.removeAllObjects()
+    }
+    
     func fetchQuotes() async throws -> [Quote] {
         // Check cache first
         if let cachedQuotes = cache.object(forKey: cacheKey) as? [Quote], !cachedQuotes.isEmpty {

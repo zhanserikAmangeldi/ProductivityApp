@@ -22,10 +22,15 @@ class RootViewController: UIViewController {
             case .loggedIn:
                 self?.showMainFlow()
             case .loggedOut:
+                self?.clearUserCaches()
                 self?.showAuthenticationFlow()
             }
         }
         .store(in: &cancellables)
+    }
+    
+    private func clearUserCaches() {
+        QuotesService.shared.clearCache()
     }
     
     private func showAuthenticationFlow() {
