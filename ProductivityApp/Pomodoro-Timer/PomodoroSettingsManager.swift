@@ -19,7 +19,7 @@ class PomodoroSettingsManager {
     
     private init() {
         // Load settings from UserDefaults or use default
-        if let savedSettingsData = UserDefaults.standard.data(forKey: settingsKey),
+        if let savedSettingsData = UserDefaultsManager.shared.data(forKey: settingsKey),
            let decodedSettings = try? JSONDecoder().decode(PomodoroSettings.self, from: savedSettingsData) {
             self.settings = decodedSettings
         } else {
@@ -27,7 +27,7 @@ class PomodoroSettingsManager {
         }
         
         // Load session from UserDefaults or use default
-        if let savedSessionData = UserDefaults.standard.data(forKey: sessionKey),
+        if let savedSessionData = UserDefaultsManager.shared.data(forKey: sessionKey),
            let decodedSession = try? JSONDecoder().decode(PomodoroSession.self, from: savedSessionData) {
             self.session = decodedSession
         } else {
@@ -37,13 +37,13 @@ class PomodoroSettingsManager {
     
     func saveSettings() {
         if let encodedSettings = try? JSONEncoder().encode(settings) {
-            UserDefaults.standard.set(encodedSettings, forKey: settingsKey)
+            UserDefaultsManager.shared.setValue(encodedSettings, forKey: settingsKey)
         }
     }
     
     func saveSession() {
         if let encodedSession = try? JSONEncoder().encode(session) {
-            UserDefaults.standard.set(encodedSession, forKey: sessionKey)
+            UserDefaultsManager.shared.setValue(encodedSession, forKey: sessionKey)
         }
     }
     
