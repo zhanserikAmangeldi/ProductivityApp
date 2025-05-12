@@ -15,6 +15,12 @@ struct HobbyActivityGridView: View {
     @State private var gridData: [[Date]] = [] // 2D array for GitHub-style grid
     @State private var todayIndices: (column: Int, row: Int)? = nil
     
+    // Add ID struct to better control redraws
+    private struct CellID: Hashable {
+        let date: Date
+        let completed: Bool
+    }
+    
     // Number of columns to show (represents a full year of data)
     private var columnsToDisplay: Int {
         return 52
@@ -35,15 +41,16 @@ struct HobbyActivityGridView: View {
                             VStack(spacing: 2) {
                                 ForEach(0..<min(gridData[colIndex].count, rowsPerColumn), id: \.self) { rowIndex in
                                     let date = gridData[colIndex][rowIndex]
-                                    let isToday = Calendar.current.isDateInToday(date)
+                                    let isCompleted = hobby.hasEntry(for: date)
                                     
                                     DateCell(
                                         date: date,
                                         hobby: hobby,
                                         isInteractive: isInteractive,
                                         onToggle: onToggle,
-                                        isHighlighted: isToday
+                                        isHighlighted: Calendar.current.isDateInToday(date)
                                     )
+                                    .id(CellID(date: date, completed: isCompleted))
                                     .frame(width: 8, height: 8)
                                 }
                             }
@@ -174,6 +181,8 @@ struct DateCell: View {
         }
         .disabled(!isInteractive || !isValid)
         .tooltip(tooltipText) // Add tooltip to show date on hover
+        // Add unique ID to control redraws
+        .id("\(formatDateKey(date))-\(isCompleted)")
     }
     
     private var tooltipText: String {
@@ -194,6 +203,13 @@ struct DateCell: View {
         } else {
             return Color.gray.opacity(0.1) // Light gray for future dates
         }
+    }
+    
+    // Helper method for cache key
+    private func formatDateKey(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 }
 

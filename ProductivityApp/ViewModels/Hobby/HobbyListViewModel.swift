@@ -1,5 +1,5 @@
 //
-//  HO.swift
+//  HobbyListViewModel.swift
 //  ProductivityApp
 //
 //  Created by Zhanserik Amangeldi on 09.05.2025.
@@ -18,6 +18,9 @@ class HobbyListViewModel: ObservableObject {
     @Published var searchText: String = ""
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
+    
+    // Track loading state per hobby
+    @Published var loadingHobbyIds: Set<UUID> = []
     
     init() {
         print("HobbyListViewModel initialized")
@@ -40,28 +43,24 @@ class HobbyListViewModel: ObservableObject {
     }
     
     func loadHobbies() {
+        guard !isLoading else { return } // Prevent multiple concurrent loads
+        
         isLoading = true
         errorMessage = nil
         
-        // Run in background task
         Task {
             do {
-                let fetchedHobbies = hobbyManager.fetchHobbies()
+                let fetchedHobbies = await hobbyManager.fetchHobbiesAsync(searchText: searchText.isEmpty ? nil : searchText)
                 
-                // Apply search filter if needed
-                if !searchText.isEmpty {
-                    self.hobbies = fetchedHobbies.filter { hobby in
-                        return hobby.unwrappedTitle.localizedCaseInsensitiveContains(searchText) ||
-                               hobby.unwrappedDescription.localizedCaseInsensitiveContains(searchText)
-                    }
-                } else {
+                await MainActor.run {
                     self.hobbies = fetchedHobbies
+                    self.isLoading = false
                 }
-                
-                self.isLoading = false
             } catch {
-                self.errorMessage = "Failed to load hobbies: \(error.localizedDescription)"
-                self.isLoading = false
+                await MainActor.run {
+                    self.errorMessage = "Failed to load hobbies: \(error.localizedDescription)"
+                    self.isLoading = false
+                }
             }
         }
     }
@@ -72,8 +71,28 @@ class HobbyListViewModel: ObservableObject {
     }
     
     func toggleToday(for hobby: Hobby) {
-        hobbyManager.toggleEntryCompletion(for: hobby, on: Date())
-        loadHobbies() // Refresh to update the UI
+        guard let hobbyId = hobby.id else { return }
+        
+        // Track loading state for this specific hobby
+        loadingHobbyIds.insert(hobbyId)
+        
+        Task {
+            // Toggle the entry
+            hobbyManager.toggleEntryCompletion(for: hobby, on: Date())
+            
+            // Update only this specific hobby
+            if let index = hobbies.firstIndex(where: { $0.id == hobbyId }) {
+                // Instead of fetching the entire hobby, just update what's needed
+                hobbies[index].invalidateEntriesCache() // New method we added
+                
+                // Remove loading state
+                loadingHobbyIds.remove(hobbyId)
+                // Trigger UI update only for this item
+                self.objectWillChange.send()
+            } else {
+                loadingHobbyIds.remove(hobbyId)
+            }
+        }
     }
     
     func getCurrentStreak(for hobby: Hobby) -> Int {
@@ -82,5 +101,11 @@ class HobbyListViewModel: ObservableObject {
     
     func getLongestStreak(for hobby: Hobby) -> Int {
         return hobbyManager.getLongestStreak(for: hobby)
+    }
+    
+    // Helper to check if a particular hobby is loading
+    func isLoadingHobby(_ hobbyId: UUID?) -> Bool {
+        guard let id = hobbyId else { return false }
+        return loadingHobbyIds.contains(id)
     }
 }

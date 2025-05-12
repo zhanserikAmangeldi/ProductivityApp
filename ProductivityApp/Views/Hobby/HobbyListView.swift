@@ -28,6 +28,7 @@ struct HobbyListView: View {
                                 HobbyCardView(
                                     hobby: hobby,
                                     currentStreak: viewModel.getCurrentStreak(for: hobby),
+                                    isLoading: viewModel.isLoadingHobby(hobby.id),
                                     onToggleToday: {
                                         viewModel.toggleToday(for: hobby)
                                     },
@@ -131,11 +132,13 @@ struct HobbyListView: View {
 struct HobbyCardView: View {
     let hobby: Hobby
     let currentStreak: Int
+    let isLoading: Bool
     let onToggleToday: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
     
     @State private var showingDetail = false
+    @State private var isToggling = false
     
     private var hobbyColor: Color {
         Color(hex: hobby.colorHex ?? "#4CAF50")
@@ -167,12 +170,26 @@ struct HobbyCardView: View {
                 
                 Spacer()
                 
-                // Today's completion button
-                Button(action: onToggleToday) {
-                    Image(systemName: hobby.hasEntry(for: Date()) ? "checkmark.square.fill" : "square")
-                        .font(.title2)
-                        .foregroundColor(hobby.hasEntry(for: Date()) ? hobbyColor : .gray)
+                Button(action: {
+                    // Avoid multiple clicks
+                    guard !isToggling && !isLoading else { return }
+                    isToggling = true
+                    
+                    // Toggle and reset state after a brief delay
+                    onToggleToday()
+                    
+                    isToggling = false
+                }) {
+                    if isToggling || isLoading {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                    } else {
+                        Image(systemName: hobby.hasEntry(for: Date()) ? "checkmark.square.fill" : "square")
+                            .font(.title2)
+                            .foregroundColor(hobby.hasEntry(for: Date()) ? hobbyColor : .gray)
+                    }
                 }
+                .disabled(isToggling || isLoading)
             }
             
             Divider()
@@ -217,6 +234,8 @@ struct HobbyCardView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+        // Add an ID based on completion state to ensure SwiftUI knows when to redraw
+        .id("\(hobby.id?.uuidString ?? "")-\(hobby.hasEntry(for: Date()))")
     }
 }
 

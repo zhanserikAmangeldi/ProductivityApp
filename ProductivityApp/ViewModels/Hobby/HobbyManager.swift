@@ -70,7 +70,54 @@ class HobbyManager {
             NSSortDescriptor(key: "lastModified", ascending: false)
         ]
         
+        // Add batch size for better performance
+        fetchRequest.fetchBatchSize = 20
+        
         return coreDataService.execute(fetchRequest)
+    }
+    
+    // Add this new async method to fetch hobbies in the background
+    func fetchHobbiesAsync(searchText: String? = nil) async -> [Hobby] {
+        return await withCheckedContinuation { continuation in
+            let backgroundContext = coreDataService.persistentContainer.newBackgroundContext()
+            backgroundContext.perform {
+                let fetchRequest: NSFetchRequest<Hobby> = Hobby.fetchRequest()
+                
+                var predicates: [NSPredicate] = []
+                
+                if let userId = CurrentUserService.shared.currentUserId {
+                    predicates.append(NSPredicate(format: "userId == %@", userId))
+                }
+                
+                if let searchText = searchText, !searchText.isEmpty {
+                    predicates.append(NSPredicate(format: "title CONTAINS[cd] %@ OR hobbyDescription CONTAINS[cd] %@",
+                                               searchText, searchText))
+                }
+                
+                if !predicates.isEmpty {
+                    fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+                }
+                
+                fetchRequest.sortDescriptors = [
+                    NSSortDescriptor(key: "lastModified", ascending: false)
+                ]
+                
+                // Add batch size for better performance
+                fetchRequest.fetchBatchSize = 20
+                
+                let results = (try? backgroundContext.fetch(fetchRequest)) ?? []
+                
+                // Convert to main context objects
+                let objectIDs = results.map { $0.objectID }
+                
+                DispatchQueue.main.async {
+                    let mainContextResults = objectIDs.compactMap {
+                        self.context.object(with: $0) as? Hobby
+                    }
+                    continuation.resume(returning: mainContextResults)
+                }
+            }
+        }
     }
     
     func fetchHobby(withID id: UUID) -> Hobby? {
@@ -95,18 +142,45 @@ class HobbyManager {
     // MARK: - Entry Management
     
     func toggleEntryCompletion(for hobby: Hobby, on date: Date) -> HobbyEntry? {
-        // Check if there's an existing entry
-        if let existingEntry = hobby.getEntry(for: date) {
-            // If found, delete it (toggling off)
-            context.delete(existingEntry)
-            saveContext()
-            return nil
-        } else {
-            // If not found, create a new entry (toggling on)
-            let entry = HobbyEntry.createEntry(for: hobby, on: date, in: context)
-            saveContext()
-            return entry
+        let hobbyID = hobby.objectID
+        let backgroundContext = coreDataService.persistentContainer.newBackgroundContext()
+        
+        backgroundContext.perform {
+            guard let backgroundHobby = backgroundContext.object(with: hobbyID) as? Hobby else {
+                return
+            }
+            
+            // Check for existing entry more efficiently
+            let calendar = Calendar.current
+            let entriesSet = backgroundHobby.entries as? Set<HobbyEntry> ?? []
+            let existingEntry = entriesSet.first { entry in
+                guard let entryDate = entry.date else { return false }
+                return calendar.isDate(entryDate, inSameDayAs: date)
+            }
+            
+            if let existingEntry = existingEntry {
+                backgroundContext.delete(existingEntry)
+            } else {
+                let entry = HobbyEntry(context: backgroundContext)
+                entry.id = UUID()
+                entry.date = date
+                entry.hobby = backgroundHobby
+                entry.userId = CurrentUserService.shared.currentUserId
+            }
+            
+            try? backgroundContext.save()
+            
+            // Notify main context of changes
+            DispatchQueue.main.async {
+                self.context.refreshAllObjects()
+                // Clear cache for this hobby
+                if let mainHobby = self.fetchHobby(withID: hobby.id ?? UUID()) {
+                    mainHobby.invalidateEntriesCache()
+                }
+            }
         }
+        
+        return nil // Async operation, don't wait for result
     }
     
     func setEntryCompletion(for hobby: Hobby, on date: Date, completed: Bool) -> HobbyEntry? {
@@ -119,9 +193,17 @@ class HobbyManager {
         if completed {
             let entry = HobbyEntry.createEntry(for: hobby, on: date, in: context)
             saveContext()
+            
+            // Clear cache
+            hobby.invalidateEntriesCache()
+            
             return entry
         } else {
             saveContext()
+            
+            // Clear cache
+            hobby.invalidateEntriesCache()
+            
             return nil
         }
     }
@@ -141,12 +223,20 @@ class HobbyManager {
         entry.userId = CurrentUserService.shared.currentUserId
         
         saveContext()
+        
+        // Clear cache
+        hobby.invalidateEntriesCache()
+        
         return entry
     }
     
     func deleteEntry(_ entry: HobbyEntry) {
+        let hobby = entry.hobby
         context.delete(entry)
         saveContext()
+        
+        // Clear cache
+        hobby?.invalidateEntriesCache()
     }
     
     func fetchEntries(for hobby: Hobby) -> [HobbyEntry] {

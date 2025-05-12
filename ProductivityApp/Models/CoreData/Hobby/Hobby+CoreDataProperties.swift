@@ -48,10 +48,21 @@ extension Hobby {
     }
     
     public var entriesArray: [HobbyEntry] {
+        // Check cache first
+        if let cachedEntries = HobbyCache.shared.getEntriesArray(for: self) {
+            return cachedEntries
+        }
+        
+        // If not in cache, compute and store
         let set = entries as? Set<HobbyEntry> ?? []
-        return set.sorted {
+        let sortedEntries = set.sorted {
             $0.date ?? Date() > $1.date ?? Date()
         }
+        
+        // Store in cache
+        HobbyCache.shared.storeEntriesArray(for: self, entries: sortedEntries)
+        
+        return sortedEntries
     }
     
     // Helper to get entries for a specific date
@@ -68,7 +79,21 @@ extension Hobby {
     
     // Helper to check if there's an entry for a specific date
     public func hasEntry(for date: Date) -> Bool {
-        return getEntry(for: date) != nil
+        // Check cache first
+        if let cachedResult = HobbyCache.shared.hasEntry(for: self, on: date) {
+            return cachedResult
+        }
+        
+        // If not in cache, compute and store
+        let result = getEntry(for: date) != nil
+        HobbyCache.shared.storeHasEntry(result, for: self, on: date)
+        
+        return result
+    }
+    
+    // Method to invalidate cache when entries change
+    public func invalidateEntriesCache() {
+        HobbyCache.shared.invalidateCache(for: self)
     }
 }
 
